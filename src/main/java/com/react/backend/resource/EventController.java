@@ -13,7 +13,9 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -27,15 +29,20 @@ public class EventController {
 	@Autowired
 	EventRepo eventRepo;
 	
+	@Autowired
+	SequenceGeneratorService service;
+	
+	@SuppressWarnings("static-access")
 	@CrossOrigin(origins = "http://localhost:3000/")
 	@PostMapping("addEvent")
 	public ResponseEntity<String> addEvent(@RequestBody Event event)
 	{
+		event.setId(service.getSequenceNumber(event.SEQUENCE_NAME));
 		eventRepo.save(event);
 		return ResponseEntity.ok("Added");
 	}
 	
-	@SuppressWarnings({ "rawtypes" })
+	@SuppressWarnings({ "rawtypes", "static-access" })
 	@CrossOrigin(origins = "http://localhost:3000/")
 	@PostMapping("addEventWeekly")
 	public ResponseEntity addEventWeekly(@RequestBody Event event) throws ParseException 
@@ -73,6 +80,7 @@ public class EventController {
 		
 		for(int i=0; i<numOfDates; i++)
 		{
+			event.setId(service.getSequenceNumber(event.SEQUENCE_NAME));
 			event.setStartDate(dateList.get(i));
 			event.setEndDate(dateList.get(i));
 			eventRepo.save(event);
@@ -80,13 +88,38 @@ public class EventController {
 		
 		return ResponseEntity.ok(null);
 	}
-		
+	
+	@SuppressWarnings({ "rawtypes", "static-access" })
+	@CrossOrigin(origins = "http://localhost:3000/")
+	@PostMapping("addEventEveryday")
+	public ResponseEntity addEventEveryday(@RequestBody Event event) throws ParseException
+	{
+		ArrayList<String> dates = datesList(event);
+		for(int i=0; i<dates.size(); i++) 
+		{
+			event.setId(service.getSequenceNumber(event.SEQUENCE_NAME));
+			event.setStartDate(dates.get(i));
+			event.setEndDate(dates.get(i));
+			eventRepo.save(event);
+		}
+		return ResponseEntity.ok(null);
+	}
+	
 	@SuppressWarnings("rawtypes")
 	@CrossOrigin(origins = "http://localhost:3000/")
 	@GetMapping("getEvents")
 	public ResponseEntity getEvents()
 	{
 		return ResponseEntity.ok(eventRepo.findAll());
+	}
+	
+	@SuppressWarnings("rawtypes")
+	@CrossOrigin(origins = "http://localhost:3000/")
+	@DeleteMapping("deleteEvent/{id}")
+	public ResponseEntity deleteEvent(@PathVariable("id") int id) 
+	{
+		eventRepo.deleteById(id);
+		return ResponseEntity.ok(null);
 	}
 	
 	public ArrayList<String> datesList(Event event) throws ParseException 
@@ -97,12 +130,16 @@ public class EventController {
 		long t1 = dFrom.getTime();
 		long t2 = dTo.getTime();
 		SimpleDateFormat f = new SimpleDateFormat("yyyy-MM-dd");
+
 		if(t1<t2) {
 			for(long i=t1; i<=t2;i+=86400000)
 			{
 				dates_list.add(f.format(i));
 			}
+		}else {
+			dates_list.add(f.format(dFrom));
 		}
+		
 		return dates_list;
 	}
 	
