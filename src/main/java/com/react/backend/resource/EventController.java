@@ -7,6 +7,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -22,9 +23,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.react.backend.dao.EventRepo;
 import com.react.backend.model.Event;
+import com.react.backend.service.RedisUtility;
 
 @RestController
 public class EventController {
+	
+	@Autowired
+	RedisUtility redisUtility;
 	
 	@Autowired
 	EventRepo eventRepo;
@@ -32,14 +37,15 @@ public class EventController {
 	@Autowired
 	SequenceGeneratorService service;
 	
-	@SuppressWarnings("static-access")
+	@SuppressWarnings({ "static-access", "rawtypes" })
 	@CrossOrigin(origins = "http://localhost:3000/")
 	@PostMapping("addEvent")
-	public ResponseEntity<String> addEvent(@RequestBody Event event)
+	public ResponseEntity addEvent(@RequestBody Event event)
 	{
 		event.setId(service.getSequenceNumber(event.SEQUENCE_NAME));
 		eventRepo.save(event);
-		return ResponseEntity.ok("Added");
+		redisUtility.deleteEvents();
+		return ResponseEntity.ok(null);
 	}
 	
 	@SuppressWarnings({ "rawtypes", "static-access" })
@@ -84,6 +90,7 @@ public class EventController {
 			event.setStartDate(dateList.get(i));
 			event.setEndDate(dateList.get(i));
 			eventRepo.save(event);
+			redisUtility.deleteEvents();
 		}
 		
 		return ResponseEntity.ok(null);
@@ -101,16 +108,22 @@ public class EventController {
 			event.setStartDate(dates.get(i));
 			event.setEndDate(dates.get(i));
 			eventRepo.save(event);
+			redisUtility.deleteEvents();
 		}
 		return ResponseEntity.ok(null);
 	}
 	
-	@SuppressWarnings("rawtypes")
 	@CrossOrigin(origins = "http://localhost:3000/")
 	@GetMapping("getEvents")
-	public ResponseEntity getEvents()
+	public List<Event> getEvents()
 	{
-		return ResponseEntity.ok(eventRepo.findAll());
+		var events = redisUtility.findAll();
+		
+		if (events.isEmpty()) {				
+			events= eventRepo.findAll();
+			redisUtility.saveAll(events);
+		}
+		return events;
 	}
 	
 	@SuppressWarnings("rawtypes")
@@ -139,7 +152,6 @@ public class EventController {
 		}else {
 			dates_list.add(f.format(dFrom));
 		}
-		
 		return dates_list;
 	}
 	
