@@ -52,4 +52,11 @@ public class RedisUtility {
 	{
 		template.opsForHash().delete(HASH_KEY_LISTS, HASH_KEY_LISTS);
 	}
+	
+	@SuppressWarnings("unchecked")
+	public void deleteEvent(int id) 
+	{
+		template.opsForHash().delete(HASH_KEY+id, id);
+	}
+	
 }
