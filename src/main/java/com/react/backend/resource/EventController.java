@@ -131,7 +131,7 @@ public class EventController {
 	@DeleteMapping("deleteEvent/{id}")
 	public ResponseEntity deleteEvent(@PathVariable("id") int id) 
 	{
-		redisUtility.deleteEvent(id);
+		redisUtility.deleteEvents();
 		eventRepo.deleteById(id);
 		return ResponseEntity.ok(null);
 	}

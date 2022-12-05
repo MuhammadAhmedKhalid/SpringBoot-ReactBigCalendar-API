@@ -23,14 +23,6 @@ public class RedisUtility {
 	private RedisTemplate template;
 	
 	@SuppressWarnings("unchecked")
-	public Event save(Event event)
-	{
-		template.opsForHash().put(HASH_KEY+event.getId(), event.getId(), event);
-		template.expire(HASH_KEY+event.getId(), 60, TimeUnit.MINUTES);
-		return event;
-	}
-	
-	@SuppressWarnings("unchecked")
 	public void saveAll(List<Event> events)
 	{
 		template.opsForHash().put(HASH_KEY_LISTS, HASH_KEY_LISTS, events);
@@ -52,11 +44,4 @@ public class RedisUtility {
 	{
 		template.opsForHash().delete(HASH_KEY_LISTS, HASH_KEY_LISTS);
 	}
-	
-	@SuppressWarnings("unchecked")
-	public void deleteEvent(int id) 
-	{
-		template.opsForHash().delete(HASH_KEY+id, id);
-	}
-	
 }
